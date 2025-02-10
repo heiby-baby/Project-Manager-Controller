@@ -8,6 +8,8 @@ namespace PMC
     class Program
     {
         static string filePath = "db.json";
+        static DataStore dataStore = new DataStore();
+
         static List<User> users = new List<User>();
         static List<Task> tasks = new List<Task>();
         static List<Log> logs = new List<Log>();
@@ -34,6 +36,7 @@ namespace PMC
                 {
                     users = data.Users;
                     tasks = data.Tasks;
+                    logs = data.Logs;
                 }
             }
             catch (FileNotFoundException)
@@ -57,7 +60,7 @@ namespace PMC
                 }
             }
         }
-
+       
         static void SaveData()
         {
             var data = new DataStore { Users = users, Tasks = tasks, Logs = logs };
@@ -157,30 +160,35 @@ namespace PMC
         static void UpdateTaskStatus()
         {
             Console.Write("Введите ID задачи: ");
-            if (int.TryParse(Console.ReadLine(), out int id))
-            {
-                var task = tasks.Find(t => t.Id == id && t.Assignee == currentUser.Login);
-                if (task != null)
-                {
-                    string newStatus = GetUserInput("Введите новый статус (To Do / In Progress / Done)", "Статус не может быть пустым");
-                    switch (newStatus)
-                    {
-                        case "To Do": task.Status = "To Do"; logs.Add(new Log { dateTime = DateTime.Now, Assignee = task.Assignee, taskId = task.Id, newStatus = "To Do" }); break;
-                        case "In Progress": task.Status = "In Progress"; logs.Add(new Log { dateTime = DateTime.Now, Assignee = task.Assignee, taskId = task.Id, newStatus = "In Progress" }); break;
-                        case "Done": task.Status = "Done"; logs.Add(new Log { dateTime = DateTime.Now, Assignee = task.Assignee, taskId = task.Id, newStatus = "Done" }); break;
-                        default: Console.WriteLine("Неверный ввод"); break;
-                    }
-                    Console.WriteLine("Статус обновлен.");
-                }
-                else
-                {
-                    Console.WriteLine("Задача не найдена.");
-                }
-            }
-            else
+            if (!int.TryParse(Console.ReadLine(), out int id))
             {
                 Console.WriteLine("Неверный ввод.");
+                return;
             }
+
+            var task = tasks.Find(t => t.Id == id && t.Assignee == currentUser.Login);
+            if (task == null)
+            {
+                Console.WriteLine("Задача не найдена.");
+                return;
+            }
+
+            string newStatus = GetUserInput("Введите новый статус (To Do / In Progress / Done)", "Статус не может быть пустым");
+            if (newStatus != "To Do" && newStatus != "In Progress" && newStatus != "Done")
+            {
+                Console.WriteLine("Неверный ввод.");
+                return;
+            }
+
+            if (task.Status == newStatus)
+            {
+                Console.WriteLine("Ошибка: новый статус совпадает с текущим.");
+                return;
+            }
+
+            task.Status = newStatus;
+            logs.Add(new Log { dateTime = DateTime.Now, Assignee = task.Assignee, taskId = task.Id, newStatus = newStatus });
+            Console.WriteLine("Статус обновлен.");
         }
 
         static string GetUserInput(string prompt, string errorMessage)
@@ -209,6 +217,7 @@ namespace PMC
         public List<User> Users { get; set; } = new List<User>();
         public List<Task> Tasks { get; set; } = new List<Task>();
         public List<Log> Logs { get; set; } = new List<Log>();
+
     }
 
 
