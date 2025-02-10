@@ -1,0 +1,23 @@
+{
+  "Users": [
+    {
+      "Login": "manager1",
+      "Password": "pass123",
+      "Role": 0
+    },
+    {
+      "Login": "employee1",
+      "Password": "pass456",
+      "Role": 1
+    }
+  ],
+  "Tasks": [
+    {
+      "Id": 1,
+      "Title": "Создать отчёт",
+      "Description": "Составить еженедельный отчёт о проделанной работе",
+      "Assignee": "employee1",
+      "Status": "To Do"
+    }
+  ]
+}
