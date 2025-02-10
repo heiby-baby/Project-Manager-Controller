@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-
-namespace RMC {
+namespace PMC
+{
     class Program
     {
         static string filePath = "db.json";
         static List<User> users = new List<User>();
         static List<Task> tasks = new List<Task>();
+        static List<Log> logs = new List<Log>();
         static User currentUser = null;
 
         static void Main()
@@ -25,7 +26,7 @@ namespace RMC {
 
         static void LoadData()
         {
-            if (File.Exists(filePath))
+            try
             {
                 var json = File.ReadAllText(filePath);
                 var data = JsonSerializer.Deserialize<DataStore>(json);
@@ -35,22 +36,39 @@ namespace RMC {
                     tasks = data.Tasks;
                 }
             }
+            catch (FileNotFoundException)
+            {
+                Console.WriteLine("Не обнаружен файл для работы программы");
+                Console.WriteLine("Желаете ли вы создать новый файл (Значение по умолчанию N)? (Y/N)");
+                string answer = Console.ReadLine();
+                if (answer == "Y" || answer == "y" || answer == "Д" || answer == "д")
+                {
+                    User user = new User
+                    {
+                        Role = Role.Manager,
+                        Login = GetUserInput("Пожалуйста, введите логин администратора", "Логин не может быть пустым"),
+                        Password = Hash.HashString(GetUserInput("Пожалуйста, введите пароль администратора", "Пароль не может быть пустым"))
+                    };
+                    users.Add(user);
+                }
+                else
+                {
+                    Environment.Exit(0);
+                }
+            }
         }
 
         static void SaveData()
         {
-            var data = new DataStore { Users = users, Tasks = tasks };
+            var data = new DataStore { Users = users, Tasks = tasks, Logs = logs };
             File.WriteAllText(filePath, JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true }));
         }
 
         static void Authenticate()
         {
-            Console.Write("Введите логин: ");
-            string login = Console.ReadLine();
-            Console.Write("Введите пароль: ");
-            string password = Console.ReadLine();
-
-            currentUser = users.Find(u => u.Login == login && u.Password == password);
+            string login = GetUserInput("Введите логин", "Логин не может быть пустым");
+            string password = GetUserInput("Введите пароль", "Пароль не может быть пустым");
+            currentUser = users.Find(u => u.Login == login && Hash.VerifyHash(password, u.Password));
             if (currentUser == null)
             {
                 Console.WriteLine("Неверные учетные данные.");
@@ -98,12 +116,9 @@ namespace RMC {
 
         static void CreateTask()
         {
-            Console.Write("Введите название задачи: ");
-            string title = Console.ReadLine();
-            Console.Write("Введите описание: ");
-            string description = Console.ReadLine();
-            Console.Write("Введите логин сотрудника: ");
-            string assignee = Console.ReadLine();
+            string title = GetUserInput("Введите название задачи", "Название не может быть пустым");
+            string description = GetUserInput("Введите описание", "Описание не может быть пустым");
+            string assignee = GetUserInput("Введите логин сотрудника", "Логин не может быть пустым");
 
             if (users.Exists(u => u.Login == assignee && u.Role == Role.Employee))
             {
@@ -116,13 +131,10 @@ namespace RMC {
             }
         }
 
-        //Добавить шифрование
         static void RegisterEmployee()
         {
-            Console.Write("Введите логин: ");
-            string login = Console.ReadLine();
-            Console.Write("Введите пароль: ");
-            string password = Console.ReadLine();
+            string login = GetUserInput("Введите логин", "Логин не может быть пустым");
+            string password = GetUserInput("Введите пароль", "Пароль не может быть пустым");
 
             if (users.Exists(u => u.Login == login))
             {
@@ -130,7 +142,7 @@ namespace RMC {
                 return;
             }
 
-            users.Add(new User { Login = login, Password = password, Role = Role.Employee });
+            users.Add(new User { Login = login, Password = Hash.HashString(password), Role = Role.Employee });
             Console.WriteLine("Сотрудник зарегистрирован.");
         }
 
@@ -150,9 +162,14 @@ namespace RMC {
                 var task = tasks.Find(t => t.Id == id && t.Assignee == currentUser.Login);
                 if (task != null)
                 {
-                    Console.Write("Введите новый статус (To Do / In Progress / Done): ");
-                    //сделать проверку на корректность статуса
-                    task.Status = Console.ReadLine();
+                    string newStatus = GetUserInput("Введите новый статус (To Do / In Progress / Done)", "Статус не может быть пустым");
+                    switch (newStatus)
+                    {
+                        case "To Do": task.Status = "To Do"; logs.Add(new Log { dateTime = DateTime.Now, Assignee = task.Assignee, taskId = task.Id, newStatus = "To Do" }); break;
+                        case "In Progress": task.Status = "In Progress"; logs.Add(new Log { dateTime = DateTime.Now, Assignee = task.Assignee, taskId = task.Id, newStatus = "In Progress" }); break;
+                        case "Done": task.Status = "Done"; logs.Add(new Log { dateTime = DateTime.Now, Assignee = task.Assignee, taskId = task.Id, newStatus = "Done" }); break;
+                        default: Console.WriteLine("Неверный ввод"); break;
+                    }
                     Console.WriteLine("Статус обновлен.");
                 }
                 else
@@ -165,24 +182,20 @@ namespace RMC {
                 Console.WriteLine("Неверный ввод.");
             }
         }
-    }
 
-
-    class User
-    {
-        public string Login { get; set; }
-        public string Password { get; set; }
-        public Role Role { get; set; }
-    }
-
-
-    class Task
-    {
-        public int Id { get; set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
-        public string Assignee { get; set; }
-        public string Status { get; set; }
+        static string GetUserInput(string prompt, string errorMessage)
+        {
+            while (true)
+            {
+                Console.WriteLine(prompt);
+                string input = Console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(input))
+                {
+                    return input;
+                }
+                Console.WriteLine(errorMessage);
+            }
+        }
     }
 
     enum Role
@@ -195,5 +208,8 @@ namespace RMC {
     {
         public List<User> Users { get; set; } = new List<User>();
         public List<Task> Tasks { get; set; } = new List<Task>();
+        public List<Log> Logs { get; set; } = new List<Log>();
     }
+
+
 }
