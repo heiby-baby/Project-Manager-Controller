@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -153,49 +153,31 @@ namespace PMC
         {
             Console.WriteLine("1. Вывести все задачи");
             Console.WriteLine("2. Задачи со статусом \"To Do\"");
-            Console.WriteLine("2. Задачи со статусом \"In Project\"");
-            Console.WriteLine("2. Задачи со статусом \"Done\"");
+            Console.WriteLine("3. Задачи со статусом \"In Progress\"");
+            Console.WriteLine("4. Задачи со статусом \"Done\"");
             string choice = Console.ReadLine();
-            switch (choice)
-            {
-                case "1":
-                    {
-                        foreach (var task in tasks.FindAll(t => t.Assignee == currentUser.Login))
-                        {
-                            Console.WriteLine($"[{task.Id}] {task.Title} - {task.Description} (Статус: {task.Status})");
-                        }
-                        break;
-                    }
-                case "2":
-                    {
-                        foreach (var task in tasks.FindAll(t => t.Assignee == currentUser.Login && t.Status == "To Do"))
-                        {
-                            Console.WriteLine($"[{task.Id}] {task.Title} - {task.Description} (Статус: {task.Status})");
-                        }
-                        break;
-                    }
-                case "3":
-                    {
-                        foreach (var task in tasks.FindAll(t => t.Assignee == currentUser.Login && t.Status == "In Project"))
-                        {
-                            Console.WriteLine($"[{task.Id}] {task.Title} - {task.Description} (Статус: {task.Status})");
-                        }
-                        break;
-                    }
-                case "4":
-                    {
-                        foreach (var task in tasks.FindAll(t => t.Assignee == currentUser.Login && t.Status == "Done"))
-                        {
-                            Console.WriteLine($"[{task.Id}] {task.Title} - {task.Description} (Статус: {task.Status})");
-                        }
-                        break ;
-                    }
-                default:
-                    {
-                        break;
-                    }
-            }
 
+            var userTasks = tasks.FindAll(t => t.Assignee == currentUser.Login);
+            var filteredTasks = choice switch
+            {
+                "1" => userTasks,
+                "2" => userTasks.FindAll(t => t.Status == "To Do"),
+                "3" => userTasks.FindAll(t => t.Status == "In Progress"),
+                "4" => userTasks.FindAll(t => t.Status == "Done"),
+                _ => null
+            };
+
+            if (filteredTasks != null)
+            {
+                foreach (var task in filteredTasks)
+                {
+                    Console.WriteLine($"[{task.Id}] {task.Title} - {task.Description} (Статус: {task.Status})");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Неверный ввод.");
+            }
         }
 
         static void UpdateTaskStatus()
