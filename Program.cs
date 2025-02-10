@@ -151,10 +151,51 @@ namespace PMC
 
         static void ViewTasks()
         {
-            foreach (var task in tasks.FindAll(t => t.Assignee == currentUser.Login))
+            Console.WriteLine("1. Вывести все задачи");
+            Console.WriteLine("2. Задачи со статусом \"To Do\"");
+            Console.WriteLine("2. Задачи со статусом \"In Project\"");
+            Console.WriteLine("2. Задачи со статусом \"Done\"");
+            string choice = Console.ReadLine();
+            switch (choice)
             {
-                Console.WriteLine($"[{task.Id}] {task.Title} - {task.Description} (Статус: {task.Status})");
+                case "1":
+                    {
+                        foreach (var task in tasks.FindAll(t => t.Assignee == currentUser.Login))
+                        {
+                            Console.WriteLine($"[{task.Id}] {task.Title} - {task.Description} (Статус: {task.Status})");
+                        }
+                        break;
+                    }
+                case "2":
+                    {
+                        foreach (var task in tasks.FindAll(t => t.Assignee == currentUser.Login && t.Status == "To Do"))
+                        {
+                            Console.WriteLine($"[{task.Id}] {task.Title} - {task.Description} (Статус: {task.Status})");
+                        }
+                        break;
+                    }
+                case "3":
+                    {
+                        foreach (var task in tasks.FindAll(t => t.Assignee == currentUser.Login && t.Status == "In Project"))
+                        {
+                            Console.WriteLine($"[{task.Id}] {task.Title} - {task.Description} (Статус: {task.Status})");
+                        }
+                        break;
+                    }
+                case "4":
+                    {
+                        foreach (var task in tasks.FindAll(t => t.Assignee == currentUser.Login && t.Status == "Done"))
+                        {
+                            Console.WriteLine($"[{task.Id}] {task.Title} - {task.Description} (Статус: {task.Status})");
+                        }
+                        break ;
+                    }
+                default:
+                    {
+                        break;
+                    }
             }
+
         }
 
         static void UpdateTaskStatus()
