@@ -33,4 +33,3 @@
    cd Project-Manager-Controller
    dotnet build
    dotnet run
-  ```
