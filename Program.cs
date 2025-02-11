@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.Json;
+using Newtonsoft.Json;
 
 namespace PMC
 {
@@ -31,7 +31,7 @@ namespace PMC
             try
             {
                 var json = File.ReadAllText(filePath);
-                var data = JsonSerializer.Deserialize<DataStore>(json);
+                var data = JsonConvert.DeserializeObject<DataStore>(json); // Используем JsonConvert
                 if (data != null)
                 {
                     users = data.Users;
@@ -60,11 +60,12 @@ namespace PMC
                 }
             }
         }
-       
+
         static void SaveData()
         {
             var data = new DataStore { Users = users, Tasks = tasks, Logs = logs };
-            File.WriteAllText(filePath, JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true }));
+            string json = JsonConvert.SerializeObject(data, Formatting.Indented); // Используем JsonConvert
+            File.WriteAllText(filePath, json);
         }
 
         static void Authenticate()
